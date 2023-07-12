@@ -4,6 +4,8 @@ import 'package:ipssi_bd23_2/controller/constante.dart';
 import 'package:ipssi_bd23_2/controller/firestoreHelper.dart';
 import 'package:ipssi_bd23_2/model/utilisateur.dart';
 
+import '../view/messagerie_view.dart';
+
 class AllFavorites extends StatefulWidget {
   const AllFavorites({Key? key}) : super(key: key);
 
@@ -30,7 +32,6 @@ class _AllFavoritesState extends State<AllFavorites> {
       });
     }
     super.initState();
-    
   }
 
   @override
@@ -64,6 +65,24 @@ class _AllFavoritesState extends State<AllFavorites> {
                           Text(user.email),
                           SizedBox(height: 8),
                           Text(user.telephone ?? "Téléphone"),
+                          SizedBox(height: 16),
+                          InkWell(
+                            child: Row(
+                              children: [
+                                Icon(Icons.message, color: Colors.blue),
+                                Text("Envoyer un message",
+                                    style: TextStyle(color: Colors.blue)),
+                              ],
+                            ),
+                            onTap: (() {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          MessagerieView(autrePersonne: user)));
+                            }),
+                          ),
                           SizedBox(height: 16),
                           Align(
                             alignment: Alignment.centerRight,
