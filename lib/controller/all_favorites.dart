@@ -68,6 +68,7 @@ class _AllFavoritesState extends State<AllFavorites> {
                           SizedBox(height: 16),
                           InkWell(
                             child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.message, color: Colors.blue),
                                 Text("Envoyer un message",

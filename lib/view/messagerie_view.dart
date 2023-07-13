@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ipssi_bd23_2/model/utilisateur.dart';
 import 'package:ipssi_bd23_2/model/message.dart';
 import 'package:flutter/material.dart';
@@ -20,24 +23,49 @@ class _MessagerieViewState extends State<MessagerieView> {
 
   @override
   void initState() {
+    // print();
+    List members = [moi.uid, widget.autrePersonne.uid];
+    members.sort();
+    String string = members.join("_");
+    print(string);
     FirestoreHelper()
         .cloudMessages
-        .where("senderId", isEqualTo: moi.uid)
+        // .where("senderId", whereIn: [moi.uid, widget.autrePersonne.uid])
+        // .where("receiverId", whereIn: [moi.uid, widget.autrePersonne.uid])
+        .where("members", isEqualTo: string)
         //ajouter condition pour le receiver
-        .orderBy("date", descending: true)
+        // .orderBy("date", descending: true)
         .snapshots()
         .listen((event) {
-      setState(() {
-        messages = event.docs.map((e) => Message(e)).toList();
-      });
+      if (!mounted) {
+        return;
+      } else {
+        setState(() {
+          messages = event.docs.map((e) => Message(e)).toList();
+          messages.sort((a, b) => a.date.compareTo(b.date));
+        });
+      }
     });
+    // print(messages);
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.autrePersonne.fullName),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundImage:
+                  NetworkImage(widget.autrePersonne.avatar ?? defaultImage),
+            ),
+            SizedBox(width: 12),
+            Text(widget.autrePersonne.fullName),
+          ],
+        ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -67,9 +95,45 @@ class _MessagerieViewState extends State<MessagerieView> {
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
                         Message message = messages[index];
+                        DateTime dateTime = message.date.toDate();
+                        DateTime now = DateTime.now();
+                        DateTime today = DateTime(now.year, now.month, now.day);
+                        bool isToday = dateTime.isAfter(today);
                         return Container(
                           //A améliorer
-                          child: Text(message.content),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Align(
+                                alignment: (message.senderId == moi.uid)
+                                    ? Alignment.bottomRight
+                                    : Alignment.bottomLeft,
+                                child: Container(
+                                  color: (message.senderId == moi.uid)
+                                      ? Color.fromARGB(255, 166, 138, 222)
+                                      : Colors.white,
+                                  padding: const EdgeInsets.all(10),
+                                  margin: const EdgeInsets.all(10),
+                                  child: Text(
+                                    message.content,
+                                    textAlign: (message.senderId == moi.uid)
+                                        ? TextAlign.right
+                                        : TextAlign.left,
+                                  ),
+                                ),
+                              ),
+                              Align(
+                                alignment: (message.senderId == moi.uid)
+                                    ? Alignment.bottomRight
+                                    : Alignment.bottomLeft,
+                                child: (isToday)
+                                    ? Text(
+                                        "${dateTime.hour}:${dateTime.minute}")
+                                    : Text(
+                                        "${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute}"),
+                              ),
+                            ],
+                          ),
                         );
                       })),
             ),
@@ -94,7 +158,10 @@ class _MessagerieViewState extends State<MessagerieView> {
                       onPressed: () {
                         if (messageController.text != "") {
                           String message = messageController.text;
+                          List members = [moi.uid, widget.autrePersonne.uid];
+                          members.sort();
                           FirestoreHelper().cloudMessages.add({
+                            'members': members.join("_"),
                             'content': message,
                             'date': DateTime.now(),
                             'senderId': moi.uid,
